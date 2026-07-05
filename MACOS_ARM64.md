@@ -39,6 +39,44 @@ cd run-vc
 ./reVC
 ```
 
+## Vice City Deluxe asset overlay
+
+The native `reVC` binary can load replacement data, models, textures, and text
+files from mods such as Vice City Deluxe. It cannot load Windows-only runtime
+hooks such as `.asi`, `.dll`, or CLEO scripts.
+
+Prepare the normal `run-vc/` folder first, then create a separate local overlay
+folder:
+
+```sh
+cp -a run-vc run-vc-deluxe
+rsync -rt \
+  --exclude='*.dll' --exclude='*.DLL' \
+  --exclude='*.asi' --exclude='*.ASI' \
+  --exclude='*.cs' --exclude='*.CS' \
+  --exclude='*.cleo' --exclude='*.CLEO' \
+  --exclude='CLEO/' \
+  "/path/to/extracted/Vice City Deluxe/" run-vc-deluxe/
+python3 utils/patch-vc-deluxe-assets.py --base run-vc --target run-vc-deluxe
+```
+
+The patch step repairs local mod data that does not match this port:
+
+- merges missing `reVC` frontend/config text keys into the Deluxe English GXT
+- replaces Deluxe's white-only bike color entries for `sanchez`, `pcj600`, and
+  `faggio` with working base-game color sets
+
+After rebuilding the binary, copy it into the Deluxe run folder if needed:
+
+```sh
+./utils/build-macos-arm64.sh
+rm -f run-vc-deluxe/reVC
+cp run-vc/reVC run-vc-deluxe/reVC
+codesign --force --sign - run-vc-deluxe/reVC
+cd run-vc-deluxe
+./reVC
+```
+
 ## Performance notes
 
 For a native macOS build, Game Porting Toolkit is useful as a reference and for

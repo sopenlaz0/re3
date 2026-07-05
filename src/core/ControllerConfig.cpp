@@ -873,6 +873,12 @@ void CControllerConfigManager::AffectControllerStateOn_ButtonDown_ThirdPersonOnl
 	}
 }
 
+static bool
+MapKeyboardMovementToLeftStick(eControllerType type)
+{
+	return (type == KEYBOARD || type == OPTIONAL_EXTRA) && (CPad::GetPad(0)->Mode == 1 || CPad::GetPad(0)->Mode == 3);
+}
+
 void CControllerConfigManager::AffectControllerStateOn_ButtonDown_FirstAndThirdPersonOnly(int32 button, eControllerType type, CControllerState &state)
 {
 	CPad *pad = CPad::GetPad(PAD1);
@@ -886,26 +892,50 @@ void CControllerConfigManager::AffectControllerStateOn_ButtonDown_FirstAndThirdP
 
 	if (button == GetControllerKeyAssociatedWithAction(GO_FORWARD, type))
 	{
-		if (state.DPadDown || m_aSimCheckers[SIM_Y1][type])
+		if (MapKeyboardMovementToLeftStick(type))
 		{
-			m_aSimCheckers[SIM_Y1][type] = true;
-			state.DPadDown = 0;
-			state.DPadUp = 0;
+			if (state.LeftStickY == 128 || m_aSimCheckers[SIM_Y1][type])
+			{
+				m_aSimCheckers[SIM_Y1][type] = true;
+				state.LeftStickY = 0;
+			}
+			else
+				state.LeftStickY = -128;
 		}
-		else
-			state.DPadUp = 255;
+		else {
+			if (state.DPadDown || m_aSimCheckers[SIM_Y1][type])
+			{
+				m_aSimCheckers[SIM_Y1][type] = true;
+				state.DPadDown = 0;
+				state.DPadUp = 0;
+			}
+			else
+				state.DPadUp = 255;
+		}
 	}
 
 	if (button == GetControllerKeyAssociatedWithAction(GO_BACK, type))
 	{
-		if (state.DPadUp || m_aSimCheckers[SIM_Y1][type])
+		if (MapKeyboardMovementToLeftStick(type))
 		{
-			m_aSimCheckers[SIM_Y1][type] = true;
-			state.DPadDown = 0;
-			state.DPadUp = 0;
+			if (state.LeftStickY == -128 || m_aSimCheckers[SIM_Y1][type])
+			{
+				m_aSimCheckers[SIM_Y1][type] = true;
+				state.LeftStickY = 0;
+			}
+			else
+				state.LeftStickY = 128;
 		}
-		else
-			state.DPadDown = 255;
+		else {
+			if (state.DPadUp || m_aSimCheckers[SIM_Y1][type])
+			{
+				m_aSimCheckers[SIM_Y1][type] = true;
+				state.DPadDown = 0;
+				state.DPadUp = 0;
+			}
+			else
+				state.DPadDown = 255;
+		}
 	}
 
 	if (button == GetControllerKeyAssociatedWithAction(PED_1RST_PERSON_LOOK_LEFT, type))
@@ -970,26 +1000,50 @@ void CControllerConfigManager::AffectControllerStateOn_ButtonDown_AllStates(int3
 
 	if (button == GetControllerKeyAssociatedWithAction(GO_LEFT, type))
 	{
-		if (state.DPadRight || m_aSimCheckers[SIM_X1][type])
+		if (MapKeyboardMovementToLeftStick(type))
 		{
-			m_aSimCheckers[SIM_X1][type] = true;
-			state.DPadLeft = 0;
-			state.DPadRight = 0;
+			if (state.LeftStickX == 128 || m_aSimCheckers[SIM_X1][type])
+			{
+				m_aSimCheckers[SIM_X1][type] = true;
+				state.LeftStickX = 0;
+			}
+			else
+				state.LeftStickX = -128;
 		}
-		else
-			state.DPadLeft = 255;
+		else {
+			if (state.DPadRight || m_aSimCheckers[SIM_X1][type])
+			{
+				m_aSimCheckers[SIM_X1][type] = true;
+				state.DPadLeft = 0;
+				state.DPadRight = 0;
+			}
+			else
+				state.DPadLeft = 255;
+		}
 	}
 
 	if (button == GetControllerKeyAssociatedWithAction(GO_RIGHT, type))
 	{
-		if (state.DPadLeft || m_aSimCheckers[SIM_X1][type])
+		if (MapKeyboardMovementToLeftStick(type))
 		{
-			m_aSimCheckers[SIM_X1][type] = true;
-			state.DPadLeft = 0;
-			state.DPadRight = 0;
+			if (state.LeftStickX == -128 || m_aSimCheckers[SIM_X1][type])
+			{
+				m_aSimCheckers[SIM_X1][type] = true;
+				state.LeftStickX = 0;
+			}
+			else
+				state.LeftStickX = 128;
 		}
-		else
-			state.DPadRight = 255;
+		else {
+			if (state.DPadLeft || m_aSimCheckers[SIM_X1][type])
+			{
+				m_aSimCheckers[SIM_X1][type] = true;
+				state.DPadLeft = 0;
+				state.DPadRight = 0;
+			}
+			else
+				state.DPadRight = 255;
+		}
 	}
 
 	if (button == GetControllerKeyAssociatedWithAction(NETWORK_TALK, type))

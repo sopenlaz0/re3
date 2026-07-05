@@ -2086,6 +2086,16 @@ CPad *CPad::GetPad(int32 pad)
 #define CURMODE (Mode)
 #endif
 
+static int16
+GetAnalogOrDigitalAxis(int16 axis, int16 positive, int16 negative)
+{
+	int16 digital = (positive - negative) / 2;
+
+	if (Abs(axis) > Abs(digital))
+		return axis;
+	return digital;
+}
+
 int16 CPad::GetSteeringLeftRight(void)
 {
 	if ( ArePlayerControlsDisabled() )
@@ -2097,14 +2107,7 @@ int16 CPad::GetSteeringLeftRight(void)
 		case 0:
 		case 2:
 		{
-			int16 axis = NewState.LeftStickX;
-			int16 dpad = (NewState.DPadRight - NewState.DPadLeft) / 2;
-
-			if ( Abs(axis) > Abs(dpad) )
-				value = axis;
-			else
-				value = dpad;
-
+			value = GetAnalogOrDigitalAxis(NewState.LeftStickX, NewState.DPadRight, NewState.DPadLeft);
 			SteeringLeftRightBuffer[0] = value;
 			value = SteeringLeftRightBuffer[DrunkDrivingBufferUsed];
 
@@ -2138,23 +2141,13 @@ int16 CPad::GetSteeringUpDown(void)
 		case 0:
 		case 2:
 		{
-			int16 axis = NewState.LeftStickY;
-			int16 dpad = (NewState.DPadDown - NewState.DPadUp) / 2;
-
-			if ( Abs(axis) > Abs(dpad) )
-				return axis;
-			else
-				return dpad;
-
-			break;
+			return GetAnalogOrDigitalAxis(NewState.LeftStickY, NewState.DPadDown, NewState.DPadUp);
 		}
 
 		case 1:
 		case 3:
 		{
 			return NewState.LeftStickY;
-
-			break;
 		}
 	}
 
@@ -2225,23 +2218,13 @@ int16 CPad::GetPedWalkLeftRight(void)
 		case 0:
 		case 2:
 		{
-			int16 axis = NewState.LeftStickX;
-			int16 dpad = (NewState.DPadRight - NewState.DPadLeft) / 2;
-
-			if ( Abs(axis) > Abs(dpad) )
-				return axis;
-			else
-				return dpad;
-
-			break;
+			return GetAnalogOrDigitalAxis(NewState.LeftStickX, NewState.DPadRight, NewState.DPadLeft);
 		}
 
 		case 1:
 		case 3:
 		{
 			return NewState.LeftStickX;
-
-			break;
 		}
 	}
 
@@ -2258,23 +2241,13 @@ int16 CPad::GetPedWalkUpDown(void)
 		case 0:
 		case 2:
 		{
-			int16 axis = NewState.LeftStickY;
-			int16 dpad = (NewState.DPadDown - NewState.DPadUp) / 2;
-
-			if ( Abs(axis) > Abs(dpad) )
-				return axis;
-			else
-				return dpad;
-
-			break;
+			return GetAnalogOrDigitalAxis(NewState.LeftStickY, NewState.DPadDown, NewState.DPadUp);
 		}
 
 		case 1:
 		case 3:
 		{
 			return NewState.LeftStickY;
-
-			break;
 		}
 	}
 

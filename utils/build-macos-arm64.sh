@@ -128,7 +128,11 @@ if [ ! -x "$built_binary" ]; then
 	exit 1
 fi
 
+rm -f "$run_dir/reVC"
 cp "$built_binary" "$run_dir/reVC"
+if command -v codesign >/dev/null 2>&1; then
+	codesign --force --sign - "$run_dir/reVC"
+fi
 
 echo
 echo "Built:"

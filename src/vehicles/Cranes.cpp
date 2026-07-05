@@ -42,6 +42,21 @@ uint32 CCranes::CarsCollectedMilitaryCrane;
 int32 CCranes::NumCranes;
 CCrane CCranes::aCranes[NUM_CRANES];
 
+template<typename T, typename U>
+static T*
+GetPoolSlotFromSaveRef(CPool<T, U> *pool, void *ref)
+{
+	uintptr slot = (uintptr)ref;
+	if (slot == 0)
+		return nil;
+
+	slot--;
+	if (slot >= (uintptr)pool->GetSize())
+		return nil;
+
+	return pool->GetSlot(slot);
+}
+
 void CCranes::InitCranes(void)
 {
 	CarsCollectedMilitaryCrane = 0;
@@ -627,11 +642,11 @@ void CCranes::Save(uint8* buf, uint32* size)
 	for (int i = 0; i < NUM_CRANES; i++) {
 		CCrane *pCrane = WriteSaveBuf(buf, aCranes[i]);
 		if (pCrane->m_pCraneEntity != nil)
-			pCrane->m_pCraneEntity = (CBuilding*)(CPools::GetBuildingPool()->GetJustIndex_NoFreeAssert(pCrane->m_pCraneEntity) + 1);
+			pCrane->m_pCraneEntity = (CBuilding*)(uintptr)(CPools::GetBuildingPool()->GetJustIndex_NoFreeAssert(pCrane->m_pCraneEntity) + 1);
 		if (pCrane->m_pHook != nil)
-			pCrane->m_pHook = (CObject*)(CPools::GetObjectPool()->GetJustIndex_NoFreeAssert(pCrane->m_pHook) + 1);
+			pCrane->m_pHook = (CObject*)(uintptr)(CPools::GetObjectPool()->GetJustIndex_NoFreeAssert(pCrane->m_pHook) + 1);
 		if (pCrane->m_pVehiclePickedUp != nil)
-			pCrane->m_pVehiclePickedUp = (CVehicle*)(CPools::GetVehiclePool()->GetJustIndex_NoFreeAssert(pCrane->m_pVehiclePickedUp) + 1);
+			pCrane->m_pVehiclePickedUp = (CVehicle*)(uintptr)(CPools::GetVehiclePool()->GetJustIndex_NoFreeAssert(pCrane->m_pVehiclePickedUp) + 1);
 	}
 
 	VALIDATESAVEBUF(*size);
@@ -642,17 +657,15 @@ void CCranes::Load(uint8* buf, uint32 size)
 	INITSAVEBUF
 
 	NumCranes = ReadSaveBuf<int32>(buf);
+	NumCranes = Min(Max(NumCranes, 0), NUM_CRANES);
 	CarsCollectedMilitaryCrane = ReadSaveBuf<uint32>(buf);
 	for (int i = 0; i < NUM_CRANES; i++)
 		aCranes[i] = ReadSaveBuf<CCrane>(buf);
 	for (int i = 0; i < NUM_CRANES; i++) {
 		CCrane *pCrane = &aCranes[i];
-		if (pCrane->m_pCraneEntity != nil)
-			pCrane->m_pCraneEntity = CPools::GetBuildingPool()->GetSlot((uintptr)pCrane->m_pCraneEntity - 1);
-		if (pCrane->m_pHook != nil)
-			pCrane->m_pHook = CPools::GetObjectPool()->GetSlot((uintptr)pCrane->m_pHook - 1);
-		if (pCrane->m_pVehiclePickedUp != nil)
-			pCrane->m_pVehiclePickedUp = CPools::GetVehiclePool()->GetSlot((uintptr)pCrane->m_pVehiclePickedUp - 1);
+		pCrane->m_pCraneEntity = GetPoolSlotFromSaveRef(CPools::GetBuildingPool(), pCrane->m_pCraneEntity);
+		pCrane->m_pHook = GetPoolSlotFromSaveRef(CPools::GetObjectPool(), pCrane->m_pHook);
+		pCrane->m_pVehiclePickedUp = GetPoolSlotFromSaveRef(CPools::GetVehiclePool(), pCrane->m_pVehiclePickedUp);
 	}
 
 	VALIDATESAVEBUF(size);
