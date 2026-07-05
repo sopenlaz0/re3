@@ -87,6 +87,8 @@ Sorry for the inconvenience.
 
 ## Building from Source  
 
+For Apple Silicon macOS builds, see [MACOS_ARM64.md](MACOS_ARM64.md).
+
 When using premake, you may want to point GTA_VC_RE_DIR environment variable to GTA Vice City root folder if you want the executable to be moved there via post-build script.
 
 Clone the repository with `git clone --recursive -b miami https://github.com/GTAmodding/re3.git reVC`. Then `cd reVC` into the cloned repository.

@@ -561,6 +561,7 @@ RwChar **_psGetVideoModeList()
 {
 	RwInt32 numModes;
 	RwInt32 i;
+	RwBool hasExclusiveMode = FALSE;
 	
 	if ( _VMList != nil )
 	{
@@ -570,6 +571,17 @@ RwChar **_psGetVideoModeList()
 	numModes = RwEngineGetNumVideoModes();
 	
 	_VMList = (RwChar **)RwCalloc(numModes, sizeof(RwChar*));
+
+	for ( i = 0; i < numModes; i++ )
+	{
+		RwVideoMode vm;
+		RwEngineGetVideoModeInfo(&vm, i);
+		if ( vm.flags & rwVIDEOMODEEXCLUSIVE )
+		{
+			hasExclusiveMode = TRUE;
+			break;
+		}
+	}
 	
 	for ( i = 0; i < numModes; i++	)
 	{
@@ -577,7 +589,7 @@ RwChar **_psGetVideoModeList()
 		
 		RwEngineGetVideoModeInfo(&vm, i);
 		
-		if ( vm.flags & rwVIDEOMODEEXCLUSIVE )
+		if ( (vm.flags & rwVIDEOMODEEXCLUSIVE) || !hasExclusiveMode )
 		{
 			_VMList[i] = (RwChar*)RwCalloc(100, sizeof(RwChar));
 			rwsprintf(_VMList[i],"%d X %d X %d", vm.width, vm.height, vm.depth);
@@ -769,15 +781,32 @@ psSelectDevice()
 
 		// Find the videomode that best fits what we got from the settings file
 		RwInt32 bestFsMode = -1;
+		RwInt32 fallbackFsMode = -1;
 		RwInt32 bestWidth = -1;
 		RwInt32 bestHeight = -1;
 		RwInt32 bestDepth = -1;
+		RwInt32 fallbackWidth = -1;
+		RwInt32 fallbackHeight = -1;
+		RwInt32 fallbackDepth = -1;
+		RwBool hasExclusiveMode = FALSE;
+		bestWndMode = -1;
 		for(GcurSelVM = 0; GcurSelVM < RwEngineGetNumVideoModes(); GcurSelVM++){
 			RwEngineGetVideoModeInfo(&vm, GcurSelVM);
 
 			if (!(vm.flags & rwVIDEOMODEEXCLUSIVE)){
 				bestWndMode = GcurSelVM;
 			} else {
+				hasExclusiveMode = TRUE;
+				if(fallbackFsMode < 0 ||
+				   vm.width < fallbackWidth ||
+				   (vm.width == fallbackWidth && vm.height < fallbackHeight) ||
+				   (vm.width == fallbackWidth && vm.height == fallbackHeight && vm.depth < fallbackDepth)){
+					fallbackWidth = vm.width;
+					fallbackHeight = vm.height;
+					fallbackDepth = vm.depth;
+					fallbackFsMode = GcurSelVM;
+				}
+
 				// try the largest one that isn't larger than what we wanted
 				if(vm.width >= bestWidth && vm.width <= FrontEndMenuManager.m_nPrefsWidth &&
 				   vm.height >= bestHeight && vm.height <= FrontEndMenuManager.m_nPrefsHeight &&
@@ -791,10 +820,21 @@ psSelectDevice()
 		}
 
 		if(bestFsMode < 0){
-			printf("WARNING: Cannot find desired video mode, selecting device cancelled\n");
-			return FALSE;
+			if(hasExclusiveMode){
+				printf("WARNING: Cannot find preferred fullscreen video mode, using available fullscreen mode\n");
+				GcurSelVM = fallbackFsMode;
+			} else {
+				printf("WARNING: No exclusive fullscreen video mode found, falling back to windowed mode\n");
+				if(bestWndMode < 0){
+					printf("WARNING: No windowed mode found either, selecting device cancelled\n");
+					return FALSE;
+				}
+				FrontEndMenuManager.m_nPrefsWindowed = 1;
+				GcurSelVM = bestWndMode;
+			}
+		} else {
+			GcurSelVM = bestFsMode;
 		}
-		GcurSelVM = bestFsMode;
 
 		FrontEndMenuManager.m_nDisplayVideoMode = GcurSelVM;
 		FrontEndMenuManager.m_nPrefsVideoMode = FrontEndMenuManager.m_nDisplayVideoMode;
@@ -999,6 +1039,15 @@ void psPostRWinit(void)
 	if(!(vm.flags & rwVIDEOMODEEXCLUSIVE))
 		glfwSetWindowSize(PSGLOBAL(window), RsGlobal.maximumWidth, RsGlobal.maximumHeight);
 
+	{
+		int fbw = 0, fbh = 0;
+		glfwGetFramebufferSize(PSGLOBAL(window), &fbw, &fbh);
+		if(fbw > 0 && fbh > 0){
+			RsGlobal.maximumWidth = fbw;
+			RsGlobal.maximumHeight = fbh;
+		}
+	}
+
 	// Make sure all keys are released
 	CPad::GetPad(0)->Clear(true);
 	CPad::GetPad(1)->Clear(true);
@@ -1024,6 +1073,8 @@ RwBool _psSetVideoMode(RwInt32 subSystem, RwInt32 videoMode)
 	RwInitialised = TRUE;
 	useDefault = FALSE;
 	
+	psPostRWinit();
+
 	RwRect r;
 	
 	r.x = 0;
@@ -1032,8 +1083,6 @@ RwBool _psSetVideoMode(RwInt32 subSystem, RwInt32 videoMode)
 	r.h = RsGlobal.maximumHeight;
 
 	RsEventHandler(rsCAMERASIZE, &r);
-	
-	psPostRWinit();
 	
 	return TRUE;
 }

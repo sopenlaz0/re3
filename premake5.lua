@@ -110,7 +110,7 @@ workspace "reVC"
 		defines { "NDEBUG" }
 		optimize "Speed"
 		if(_OPTIONS["lto"]) then
-			flags { "LinkTimeOptimization" }
+			linktimeoptimization "On"
 		end
 
 	filter "configurations:Vanilla"
@@ -138,10 +138,12 @@ workspace "reVC"
 		architecture "ARM"
 		
 	filter { "platforms:macosx-arm64-*" }
-		buildoptions { "-target", "arm64-apple-macos11", "-std=gnu++14" }
+		buildoptions { "-target", "arm64-apple-macos11" }
+		cppdialect "gnu++14"
 
 	filter { "platforms:macosx-amd64-*" }
-		buildoptions { "-target", "x86_64-apple-macos10.12", "-std=gnu++14" }
+		buildoptions { "-target", "x86_64-apple-macos10.12" }
+		cppdialect "gnu++14"
 
 	filter { "platforms:*librw_d3d9*" }
 		defines { "RW_D3D9" }
@@ -150,7 +152,7 @@ workspace "reVC"
 		end
 		
 	filter "platforms:*librw_gl3_glfw*"
-		defines { "RW_GL3" }
+		defines { "RW_GL3", "LIBRW_GLFW" }
 		if(not _OPTIONS["with-librw"]) then
 			libdirs { path.join(Librw, "lib/%{getsys(cfg.system)}-%{getarch(cfg.architecture)}-gl3/%{cfg.buildcfg}") }
 		end
@@ -203,11 +205,13 @@ project "librw"
 		libdirs { "/usr/local/lib" }
 
 	filter "platforms:macosx*"
-		-- Support MacPorts and Homebrew
+		-- Support MacPorts and Homebrew (Intel + Apple Silicon)
 		includedirs { "/opt/local/include" }
-		includedirs {"/usr/local/include" }
+		includedirs { "/usr/local/include" }
+		includedirs { "/opt/homebrew/include" }
 		libdirs { "/opt/local/lib" }
 		libdirs { "/usr/local/lib" }
+		libdirs { "/opt/homebrew/lib" }
 
 	filter "platforms:*gl3_glfw*"
 		staticruntime "off"
@@ -349,8 +353,10 @@ project "reVC"
 
 	filter "platforms:macosx*oal"
 		links { "openal", "mpg123", "sndfile", "pthread" }
-		includedirs { "/usr/local/opt/openal-soft/include" }
-		libdirs { "/usr/local/opt/openal-soft/lib" }
+		includedirs { "/opt/homebrew/opt/openal-soft/include", "/usr/local/opt/openal-soft/include" }
+		includedirs { "/opt/homebrew/include", "/usr/local/include", "/opt/local/include" }
+		libdirs { "/opt/homebrew/opt/openal-soft/lib", "/usr/local/opt/openal-soft/lib" }
+		libdirs { "/opt/homebrew/lib", "/usr/local/lib", "/opt/local/lib" }
 	
 	if _OPTIONS["with-opus"] then
 		filter {}
@@ -405,5 +411,7 @@ project "reVC"
 		linkoptions { "-framework OpenGL" }
 		includedirs { "/opt/local/include" }
 		includedirs { "/usr/local/include" }
+		includedirs { "/opt/homebrew/include" }
 		libdirs { "/opt/local/lib" }
 		libdirs { "/usr/local/lib" }
+		libdirs { "/opt/homebrew/lib" }
