@@ -55,6 +55,10 @@ def pack_tabl(entries: list[tuple[bytes, int]]) -> bytes:
     return bytes(out)
 
 
+def tabl_name(name: bytes) -> bytes:
+    return name.rstrip(b"\0 ")
+
+
 def parse_tkey(payload: bytes) -> list[tuple[bytes, int]]:
     if len(payload) % 12:
         raise GxtError("TKEY payload is not divisible by 12")
@@ -97,9 +101,7 @@ class MainGxt:
         self.tabl_end = self.tabl_start + self.tabl_size
         self.tabl_entries = parse_tabl(data[self.tabl_start : self.tabl_end])
 
-        main_offsets = [
-            value for name, value in self.tabl_entries if name.rstrip(b"\0") == b"MAIN"
-        ]
+        main_offsets = [value for name, value in self.tabl_entries if tabl_name(name) == b"MAIN"]
         if len(main_offsets) != 1:
             raise GxtError(f"{self.path} has no unique MAIN table")
         self.main_start = main_offsets[0]
@@ -164,7 +166,7 @@ def merge_main_gxt(source_path: Path, target_path: Path, dry_run: bool) -> int:
 
     new_tabl_entries = []
     for name, value in target.tabl_entries:
-        if name.rstrip(b"\0") != b"MAIN" and value >= target.rest_start:
+        if tabl_name(name) != b"MAIN" and value >= target.rest_start:
             value += rest_delta
         new_tabl_entries.append((name, value))
     new_tabl = pack_tabl(new_tabl_entries)
