@@ -138,11 +138,14 @@ void
 cHandlingDataMgr::LoadHandlingData(void)
 {
 	char *start, *end;
-	char line[201];	// weird value
+	char line[512];
 	char delim[4];	// not sure
 	char *word;
+	size_t lineSize;
 	int field, handlingId;
 	int keepGoing;
+	bool endOfBuffer;
+	bool skipLine;
 	tHandlingData *handling;
 	tFlyingHandlingData *flyingHandling;
 	tBoatHandlingData *boatHandling;
@@ -153,7 +156,7 @@ cHandlingDataMgr::LoadHandlingData(void)
 	CFileMgr::SetDir("");
 
 	start = (char*)work_buff;
-	end = start+1;
+	end = start;
 	handling = nil;
 	flyingHandling = nil;
 	boatHandling = nil;
@@ -162,29 +165,50 @@ cHandlingDataMgr::LoadHandlingData(void)
 
 	while(keepGoing){
 		// find end of line
-		while(*end != '\n') end++;
+		while(*end != '\n' && *end != '\0') end++;
+		endOfBuffer = *end == '\0';
 
 		// get line
-		strncpy(line, start, end - start);
-		line[end - start] = '\0';
-		start = end+1;
-		end = start+1;
+		lineSize = end - start;
+		if(lineSize >= sizeof(line)){
+			debug("Handling line too long, truncating\n");
+			lineSize = sizeof(line)-1;
+		}
+		memcpy(line, start, lineSize);
+		line[lineSize] = '\0';
+		start = endOfBuffer ? end : end+1;
+		end = start;
+
+		char *trimmedLine = line;
+		while(*trimmedLine == ' ' || *trimmedLine == '\t' || *trimmedLine == '\r' || *trimmedLine == '\n')
+			trimmedLine++;
+		for(char *c = trimmedLine; *c; c++)
+			if(*c == '\r' || *c == '\n'){
+				*c = '\0';
+				break;
+			}
 
 		// yeah, this is kinda crappy
-		if(strcmp(line, ";the end") == 0)
+		if(strcmp(trimmedLine, ";the end") == 0)
 			keepGoing = 0;
-		else if(line[0] != ';'){
-			if(line[0] == '!'){
+		else if(trimmedLine[0] != '\0' && trimmedLine[0] != ';'){
+			if(trimmedLine[0] == '!'){
 				// Bike data
 				field = 0;
+				skipLine = false;
+				bikeHandling = nil;
 				strcpy(delim, " \t");
 				// FIX: game seems to use a do-while loop here
-				for(word = strtok(line, delim); word; word = strtok(nil, delim)){
+				for(word = strtok(trimmedLine, delim); word; word = strtok(nil, delim)){
 					switch(field){
 					case  0: break;
 					case  1:
 						handlingId = FindExactWord(word, (const char*)VehicleNames, 14, NUMHANDLINGS);
-						assert(handlingId >= 0 && handlingId < NUMHANDLINGS);
+						if(handlingId < 0 || handlingId >= NUMHANDLINGS){
+							debug("Skipping unknown bike handling id %s\n", word);
+							skipLine = true;
+							break;
+						}
 						bikeHandling = GetBikePointer(handlingId);
 						bikeHandling->nIdentifier = (tVehicleType)handlingId;
 						break;
@@ -204,20 +228,29 @@ cHandlingDataMgr::LoadHandlingData(void)
 					case 15: bikeHandling->fWheelieStabMult = atof(word); break;
 					case 16: bikeHandling->fStoppieStabMult = atof(word); break;
 					}
+					if(skipLine)
+						break;
 					field++;
 				}
-				ConvertBikeDataToGameUnits(bikeHandling);
-			}else if(line[0] == '$'){
+				if(bikeHandling)
+					ConvertBikeDataToGameUnits(bikeHandling);
+			}else if(trimmedLine[0] == '$'){
 				// Flying data
 				field = 0;
+				skipLine = false;
+				flyingHandling = nil;
 				strcpy(delim, " \t");
 				// FIX: game seems to use a do-while loop here
-				for(word = strtok(line, delim); word; word = strtok(nil, delim)){
+				for(word = strtok(trimmedLine, delim); word; word = strtok(nil, delim)){
 					switch(field){
 					case  0: break;
 					case  1:
 						handlingId = FindExactWord(word, (const char*)VehicleNames, 14, NUMHANDLINGS);
-						assert(handlingId >= 0 && handlingId < NUMHANDLINGS);
+						if(handlingId < 0 || handlingId >= NUMHANDLINGS){
+							debug("Skipping unknown flying handling id %s\n", word);
+							skipLine = true;
+							break;
+						}
 						flyingHandling = GetFlyingPointer(handlingId);
 						flyingHandling->nIdentifier = (tVehicleType)handlingId;
 						break;
@@ -240,19 +273,27 @@ cHandlingDataMgr::LoadHandlingData(void)
 					case 18: flyingHandling->vecSpeedRes.y = atof(word); break;
 					case 19: flyingHandling->vecSpeedRes.z = atof(word); break;
 					}
+					if(skipLine)
+						break;
 					field++;
 				}
-			}else if(line[0] == '%'){
+			}else if(trimmedLine[0] == '%'){
 				// Boat data
 				field = 0;
+				skipLine = false;
+				boatHandling = nil;
 				strcpy(delim, " \t");
 				// FIX: game seems to use a do-while loop here
-				for(word = strtok(line, delim); word; word = strtok(nil, delim)){
+				for(word = strtok(trimmedLine, delim); word; word = strtok(nil, delim)){
 					switch(field){
 					case  0: break;
 					case  1:
 						handlingId = FindExactWord(word, (const char*)VehicleNames, 14, NUMHANDLINGS);
-						assert(handlingId >= 0 && handlingId < NUMHANDLINGS);
+						if(handlingId < 0 || handlingId >= NUMHANDLINGS){
+							debug("Skipping unknown boat handling id %s\n", word);
+							skipLine = true;
+							break;
+						}
 						boatHandling = GetBoatPointer(handlingId);
 						boatHandling->nIdentifier = (tVehicleType)handlingId;
 						break;
@@ -271,17 +312,25 @@ cHandlingDataMgr::LoadHandlingData(void)
 					case 14: boatHandling->vecTurnRes.z = atof(word); break;
 					case 15: boatHandling->fLook_L_R_BehindCamHeight = atof(word); break;
 					}
+					if(skipLine)
+						break;
 					field++;
 				}
 			}else{
 				field = 0;
+				skipLine = false;
+				handling = nil;
 				strcpy(delim, " \t");
 				// FIX: game seems to use a do-while loop here
-				for(word = strtok(line, delim); word; word = strtok(nil, delim)){
+				for(word = strtok(trimmedLine, delim); word; word = strtok(nil, delim)){
 					switch(field){
 					case  0:
 						handlingId = FindExactWord(word, (const char*)VehicleNames, 14, NUMHANDLINGS);
-						assert(handlingId >= 0 && handlingId < NUMHANDLINGS);
+						if(handlingId < 0 || handlingId >= NUMHANDLINGS){
+							debug("Skipping unknown handling id %s\n", word);
+							skipLine = true;
+							break;
+						}
 						handling = &HandlingData[handlingId];
 						handling->nIdentifier = (tVehicleType)handlingId;
 						break;
@@ -321,11 +370,17 @@ cHandlingDataMgr::LoadHandlingData(void)
 					case 31: handling->FrontLights = atoi(word); break;
 					case 32: handling->RearLights = atoi(word); break;
 					}
+					if(skipLine)
+						break;
 					field++;
 				}
-				ConvertDataToGameUnits(handling);
+				if(handling)
+					ConvertDataToGameUnits(handling);
 			}
 		}
+
+		if(endOfBuffer)
+			keepGoing = 0;
 	}
 }
 

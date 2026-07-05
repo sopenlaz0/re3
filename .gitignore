@@ -363,4 +363,5 @@ src/extras/GitSHA1.cpp
 
 # Local macOS build/run setup
 run-vc/
+run-vc-deluxe/
 vendor/librw/
