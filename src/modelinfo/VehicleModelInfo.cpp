@@ -205,6 +205,8 @@ CVehicleModelInfo::CreateInstance(void)
 	int32 comp1, comp2;
 
 	clump = (RpClump*)CClumpModelInfo::CreateInstance();
+	if(clump == nil)
+		return nil;
 	if(m_numComps != 0){
 		clumpframe = RpClumpGetFrame(clump);
 
@@ -244,6 +246,8 @@ void
 CVehicleModelInfo::SetClump(RpClump *clump)
 {
 	CClumpModelInfo::SetClump(clump);
+	if(m_clump == nil)
+		return;
 	SetAtomicRenderCallbacks();
 	SetFrameIds(ms_vehicleDescs[m_vehicleType]);
 	PreprocessHierarchy();

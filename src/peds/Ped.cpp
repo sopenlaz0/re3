@@ -418,12 +418,14 @@ void
 CPed::SetModelIndex(uint32 mi)
 {
 	CEntity::SetModelIndex(mi);
-	RpAnimBlendClumpInit(GetClump());
-	RpAnimBlendClumpFillFrameArray(GetClump(), m_pFrames);
 	CPedModelInfo *modelInfo = (CPedModelInfo *)CModelInfo::GetModelInfo(GetModelIndex());
 	SetPedStats(modelInfo->m_pedStatType);
 	m_headingRate = m_pedStats->m_headingChangeRate;
 	m_animGroup = (AssocGroupId) modelInfo->m_animGroup;
+	if(m_rwObject == nil)
+		return;
+	RpAnimBlendClumpInit(GetClump());
+	RpAnimBlendClumpFillFrameArray(GetClump(), m_pFrames);
 	CAnimManager::AddAnimation(GetClump(), m_animGroup, ANIM_STD_IDLE);
 
 	if (!CanUseTorsoWhenLooking())

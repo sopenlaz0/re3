@@ -26,12 +26,38 @@ SetHierarchyForSkinAtomic(RpAtomic *atomic, void *data)
 	return nil;
 }
 
+static RpAtomic*
+ValidateInstanceAtomic(RpAtomic *atomic, void *data)
+{
+	bool *valid = (bool*)data;
+	if(atomic == nil || RpAtomicGetFrame(atomic) == nil || RpAtomicGetGeometry(atomic) == nil){
+		*valid = false;
+		return nil;
+	}
+	return atomic;
+}
+
+bool
+CClumpModelInfo::IsClumpValidForInstancing(RpClump *clump)
+{
+	if(clump == nil || RpClumpGetFrame(clump) == nil)
+		return false;
+
+	bool valid = true;
+	RpClumpForAllAtomics(clump, ValidateInstanceAtomic, &valid);
+	return valid;
+}
+
 RwObject*
 CClumpModelInfo::CreateInstance(void)
 {
 	if(m_clump == nil)
 		return nil;
+	if(!IsClumpValidForInstancing(m_clump))
+		return nil;
 	RpClump *clone = RpClumpClone(m_clump);
+	if(clone == nil)
+		return nil;
 	if(IsClumpSkinned(clone)){
 		RpHAnimHierarchy *hier;
 		RpHAnimAnimation *anim;
@@ -51,6 +77,8 @@ CClumpModelInfo::CreateInstance(RwMatrix *m)
 {
 	if(m_clump){
 		RpClump *clump = (RpClump*)CreateInstance();
+		if(clump == nil)
+			return nil;
 		*RwFrameGetMatrix(RpClumpGetFrame(clump)) = *m;
 		return (RwObject*)clump;
 	}
@@ -67,6 +95,13 @@ CClumpModelInfo::SetAtomicRendererCB(RpAtomic *atomic, void *data)
 void
 CClumpModelInfo::SetClump(RpClump *clump)
 {
+	if(!IsClumpValidForInstancing(clump)){
+		debug("CClumpModelInfo::SetClump - invalid clump for model %s\n", GetModelName());
+		if(clump)
+			RpClumpDestroy(clump);
+		m_clump = nil;
+		return;
+	}
 	m_clump = clump;
 	CVisibilityPlugins::SetClumpModelInfo(m_clump, this);
 	AddTexDictionaryRef();

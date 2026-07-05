@@ -217,8 +217,13 @@ void
 CVehicle::SetModelIndex(uint32 id)
 {
 	CEntity::SetModelIndex(id);
-	m_aExtras[0] = CVehicleModelInfo::ms_compsUsed[0];
-	m_aExtras[1] = CVehicleModelInfo::ms_compsUsed[1];
+	if(m_rwObject){
+		m_aExtras[0] = CVehicleModelInfo::ms_compsUsed[0];
+		m_aExtras[1] = CVehicleModelInfo::ms_compsUsed[1];
+	}else{
+		m_aExtras[0] = -1;
+		m_aExtras[1] = -1;
+	}
 	m_nNumMaxPassengers = CVehicleModelInfo::GetMaximumNumberOfPassengersFromNumberOfDoors(id);
 }
 

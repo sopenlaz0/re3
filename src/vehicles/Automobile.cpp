@@ -240,6 +240,8 @@ void
 CAutomobile::SetModelIndex(uint32 id)
 {
 	CVehicle::SetModelIndex(id);
+	if(m_rwObject == nil)
+		return;
 	SetupModelNodes();
 }
 

@@ -85,6 +85,14 @@ void CCarGenerator::DoInternalProcessing()
 	CVector pos;
 	if (CModelInfo::IsBoatModel(mi)){
 		CBoat* pBoat = new CBoat(mi, PARKED_VEHICLE);
+		if(pBoat->m_rwObject == nil){
+			debug("CCarGenerator::DoInternalProcessing - failed to create parked vehicle model %s (%d)\n", CModelInfo::GetModelInfo(mi)->GetModelName(), mi);
+			delete pBoat;
+			if(m_nModelIndex < 0)
+				m_nModelIndex = -1;
+			m_nTimer = CTimer::GetTimeInMilliseconds() + 60000;
+			return;
+		}
 		pos = m_vecPos;
 		pVehicle = pBoat;
 		if (pos.z <= -100.0f)
@@ -110,11 +118,27 @@ void CCarGenerator::DoInternalProcessing()
 		}
 		if (((CVehicleModelInfo*)CModelInfo::GetModelInfo(mi))->m_vehicleType == VEHICLE_TYPE_BIKE) {
 			CBike* pBike = new CBike(mi, PARKED_VEHICLE);
+			if(pBike->m_rwObject == nil){
+				debug("CCarGenerator::DoInternalProcessing - failed to create parked vehicle model %s (%d)\n", CModelInfo::GetModelInfo(mi)->GetModelName(), mi);
+				delete pBike;
+				if(m_nModelIndex < 0)
+					m_nModelIndex = -1;
+				m_nTimer = CTimer::GetTimeInMilliseconds() + 60000;
+				return;
+			}
 			pBike->bIsStanding = true;
 			pVehicle = pBike;
 		}
 		else {
 			CAutomobile* pCar = new CAutomobile(mi, PARKED_VEHICLE);
+			if(pCar->m_rwObject == nil){
+				debug("CCarGenerator::DoInternalProcessing - failed to create parked vehicle model %s (%d)\n", CModelInfo::GetModelInfo(mi)->GetModelName(), mi);
+				delete pCar;
+				if(m_nModelIndex < 0)
+					m_nModelIndex = -1;
+				m_nTimer = CTimer::GetTimeInMilliseconds() + 60000;
+				return;
+			}
 			pVehicle = pCar;
 		}
 		// pVehicle->GetDistanceFromCentreOfMassToBaseOfModel();

@@ -456,11 +456,21 @@ CFileLoader::LoadClumpFile(const char *filename)
 	while(RwStreamFindChunk(stream, rwID_CLUMP, nil, nil)){
 		clump = RpClumpStreamRead(stream);
 		if(clump){
+			if(RpClumpGetFrame(clump) == nil){
+				debug("CFileLoader::LoadClumpFile - invalid clump in %s\n", filename);
+				RpClumpDestroy(clump);
+				continue;
+			}
 			nodename = GetFrameNodeName(RpClumpGetFrame(clump));
 			GetNameAndLOD(nodename, name, &n);
 			mi = (CClumpModelInfo*)CModelInfo::GetModelInfo(name, nil);
 			if(mi){
 				InitClump(clump);
+				if(!CClumpModelInfo::IsClumpValidForInstancing(clump)){
+					debug("CFileLoader::LoadClumpFile - invalid clump for model %s\n", mi->GetModelName());
+					RpClumpDestroy(clump);
+					continue;
+				}
 				assert(mi->IsClump());
 				mi->SetClump(clump);
 			}else
@@ -483,8 +493,13 @@ CFileLoader::LoadClumpFile(RwStream *stream, uint32 id)
 		return false;
 	InitClump(clump);
 	mi = (CClumpModelInfo*)CModelInfo::GetModelInfo(id);
+	if(!CClumpModelInfo::IsClumpValidForInstancing(clump)){
+		debug("CFileLoader::LoadClumpFile - invalid clump for model %s\n", mi->GetModelName());
+		RpClumpDestroy(clump);
+		return false;
+	}
 	mi->SetClump(clump);
-	return true;
+	return mi->GetRwObject() != nil;
 }
 
 bool
@@ -511,8 +526,13 @@ CFileLoader::FinishLoadClumpFile(RwStream *stream, uint32 id)
 	if(clump){
 		InitClump(clump);
 		mi = (CClumpModelInfo*)CModelInfo::GetModelInfo(id);
+		if(!CClumpModelInfo::IsClumpValidForInstancing(clump)){
+			debug("CFileLoader::FinishLoadClumpFile - invalid clump for model %s\n", mi->GetModelName());
+			RpClumpDestroy(clump);
+			return false;
+		}
 		mi->SetClump(clump);
-		return true;
+		return mi->GetRwObject() != nil;
 	}else{
 		printf("FAILED\n");
 		return false;

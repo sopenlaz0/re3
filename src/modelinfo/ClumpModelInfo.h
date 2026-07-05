@@ -48,6 +48,7 @@ public:
 	virtual void ConvertAnimFileIndex(void);
 	virtual int GetAnimFileIndex(void) { return m_animFileIndex; }
 
+	static bool IsClumpValidForInstancing(RpClump *clump);
 	static RpAtomic *SetAtomicRendererCB(RpAtomic *atomic, void *data);
 	void SetFrameIds(RwObjectNameIdAssocation *assocs);
 	static RwFrame *FindFrameFromNameCB(RwFrame *frame, void *data);

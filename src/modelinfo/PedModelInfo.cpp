@@ -38,13 +38,15 @@ RwObjectNameIdAssocation CPedModelInfo::m_pPedIds[PED_NODE_MAX] = {
 void
 CPedModelInfo::SetClump(RpClump *clump)
 {
-#ifdef EXTENDED_PIPELINES
-	CustomPipes::AttachRimPipe(clump);
-#endif
 	CClumpModelInfo::SetClump(clump);
+	if(m_clump == nil)
+		return;
+#ifdef EXTENDED_PIPELINES
+	CustomPipes::AttachRimPipe(m_clump);
+#endif
 	SetFrameIds(m_pPedIds);	// not needed in VC actually
 	if(m_hitColModel == nil)
-		CreateHitColModelSkinned(clump);
+		CreateHitColModelSkinned(m_clump);
 	RpClumpForAllAtomics(m_clump, SetAtomicRendererCB, (void*)CVisibilityPlugins::RenderPedCB);
 	if(strcmp(GetModelName(), "player") == 0)
 		RpClumpForAllAtomics(m_clump, SetAtomicRendererCB, (void*)CVisibilityPlugins::RenderPlayerCB);

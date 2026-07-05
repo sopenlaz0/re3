@@ -100,6 +100,8 @@ CHeli::SetModelIndex(uint32 id)
 	int i;
 
 	CVehicle::SetModelIndex(id);
+	if(m_rwObject == nil)
+		return;
 	for(i = 0; i < NUM_HELI_NODES; i++)
 		m_aHeliNodes[i] = nil;
 	CClumpModelInfo::FillFrameArray(GetClump(), m_aHeliNodes);
