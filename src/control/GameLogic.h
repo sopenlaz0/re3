@@ -17,7 +17,7 @@ public:
 
 	static void InitAtStartOfGame();
 	static void PassTime(uint32 time);
-	static void SortOutStreamingAndMemory(const CVector &pos);
+	static void SortOutStreamingAndMemory(class CPlayerPed *pPlayerPed, const CVector &pos);
 	static void Update();
 	static void RestorePlayerStuffDuringResurrection(class CPlayerPed *pPlayerPed, CVector pos, float angle);
 

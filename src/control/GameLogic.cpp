@@ -81,17 +81,20 @@ CGameLogic::PassTime(uint32 time)
 }
 
 void 
-CGameLogic::SortOutStreamingAndMemory(const CVector &pos)
+CGameLogic::SortOutStreamingAndMemory(CPlayerPed *pPlayerPed, const CVector &pos)
 {
 	CTimer::Stop();
 	CStreaming::FlushRequestList();
 	CStreaming::DeleteRwObjectsAfterDeath(pos);
 	CStreaming::RemoveUnusedModelsInLoadedList();
 	CGame::DrasticTidyUpMemory(true);
-	CWorld::Players[CWorld::PlayerInFocus].m_pPed->Undress("player");
+	ASSERT(pPlayerPed != nil);
+	if(pPlayerPed)
+		pPlayerPed->Undress("player");
 	CStreaming::LoadSceneCollision(pos);
 	CStreaming::LoadScene(pos);
-	CWorld::Players[CWorld::PlayerInFocus].m_pPed->Dress();
+	if(pPlayerPed)
+		pPlayerPed->Dress();
 	CTimer::Update();
 }
 
@@ -100,6 +103,7 @@ CGameLogic::Update()
 {
 	CVector vecRestartPos;
 	float fRestartFloat;
+	CPlayerPed *pPlayerPed;
 
 	if (CCutsceneMgr::IsCutsceneProcessing()) return;
 
@@ -162,9 +166,10 @@ CGameLogic::Update()
 			CRestart::OverrideHospitalLevel = LEVEL_GENERIC;
 			CRestart::OverridePoliceStationLevel = LEVEL_GENERIC;
 			PassTime(720);
-			RestorePlayerStuffDuringResurrection(pPlayerInfo.m_pPed, vecRestartPos, fRestartFloat);
+			pPlayerPed = pPlayerInfo.m_pPed;
+			RestorePlayerStuffDuringResurrection(pPlayerPed, vecRestartPos, fRestartFloat);
 			AfterDeathArrestSetUpShortCutTaxi();
-			SortOutStreamingAndMemory(pPlayerInfo.GetPos());
+			SortOutStreamingAndMemory(pPlayerPed, pPlayerPed->GetPosition());
 			TheCamera.m_fCamShakeForce = 0.0f;
 			TheCamera.SetMotionBlur(0, 0, 0, 0, MOTION_BLUR_NONE);
 			CPad::GetPad(0)->StopShaking(0);
@@ -271,10 +276,11 @@ CGameLogic::Update()
 			CRestart::OverrideHospitalLevel = LEVEL_GENERIC;
 			CRestart::OverridePoliceStationLevel = LEVEL_GENERIC;
 			PassTime(720);
-			RestorePlayerStuffDuringResurrection(pPlayerInfo.m_pPed, vecRestartPos, fRestartFloat);
+			pPlayerPed = pPlayerInfo.m_pPed;
+			RestorePlayerStuffDuringResurrection(pPlayerPed, vecRestartPos, fRestartFloat);
 			AfterDeathArrestSetUpShortCutTaxi();
-			pPlayerInfo.m_pPed->ClearWeapons();
-			SortOutStreamingAndMemory(pPlayerInfo.GetPos());
+			pPlayerPed->ClearWeapons();
+			SortOutStreamingAndMemory(pPlayerPed, pPlayerPed->GetPosition());
 			TheCamera.m_fCamShakeForce = 0.0f;
 			TheCamera.SetMotionBlur(0, 0, 0, 0, MOTION_BLUR_NONE);
 			CPad::GetPad(0)->StopShaking(0);
@@ -325,8 +331,9 @@ CGameLogic::Update()
 			CRestart::FindClosestPoliceRestartPoint(pPlayerInfo.GetPos(), &vecRestartPos, &fRestartFloat);
 			CRestart::OverridePoliceStationLevel = LEVEL_GENERIC;
 			CRestart::OverrideHospitalLevel = LEVEL_GENERIC;
-			RestorePlayerStuffDuringResurrection(pPlayerInfo.m_pPed, vecRestartPos, fRestartFloat);
-			SortOutStreamingAndMemory(pPlayerInfo.GetPos());
+			pPlayerPed = pPlayerInfo.m_pPed;
+			RestorePlayerStuffDuringResurrection(pPlayerPed, vecRestartPos, fRestartFloat);
+			SortOutStreamingAndMemory(pPlayerPed, pPlayerPed->GetPosition());
 			TheCamera.m_fCamShakeForce = 0.0f;
 			TheCamera.SetMotionBlur(0, 0, 0, 0, MOTION_BLUR_NONE);
 			CPad::GetPad(0)->StopShaking(0);
