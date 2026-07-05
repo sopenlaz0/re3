@@ -9502,9 +9502,11 @@ void
 CPed::Undress(const char* name)
 {
 	int mi = GetModelIndex();
-	CAnimBlendAssociation* pAnim = RpAnimBlendClumpGetAssociation(GetClump(), ANIM_STD_PHONE_OUT);
-	if (pAnim)
-		FinishTalkingOnMobileCB(pAnim, this);
+	if (m_rwObject) {
+		CAnimBlendAssociation* pAnim = RpAnimBlendClumpGetAssociation(GetClump(), ANIM_STD_PHONE_OUT);
+		if (pAnim)
+			FinishTalkingOnMobileCB(pAnim, this);
+	}
 
 	DeleteRwObject();
 	if (IsPlayer())
