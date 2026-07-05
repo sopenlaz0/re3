@@ -350,6 +350,11 @@ CCarCtrl::GenerateOneRandomCar()
 		pVehicle = new CBike(carModel, RANDOM_VEHICLE);
 	else
 		pVehicle = new CAutomobile(carModel, RANDOM_VEHICLE);
+	if(pVehicle->m_rwObject == nil){
+		debug("CCarCtrl::GenerateOneRandomCar - failed to create random vehicle model %s (%d)\n", CModelInfo::GetModelInfo(carModel)->GetModelName(), carModel);
+		delete pVehicle;
+		return;
+	}
 	pVehicle->AutoPilot.m_nPrevRouteNode = 0;
 	pVehicle->AutoPilot.m_nCurrentRouteNode = curNodeId;
 	pVehicle->AutoPilot.m_nNextRouteNode = nextNodeId;
